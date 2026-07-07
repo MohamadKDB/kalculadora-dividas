@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#151A3D">
+<title>Kalculadora Dívidas — Kard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap');
+
+  :root{
+    --navy:#151A3D;
+    --page:#0E1122;
+    --green:#34D399;
+    --green-dark:#12B87A;
+    --green-soft:#E9F9F0;
+    --white:#FFFFFF;
+    --off-white:#F2F1EC;
+    --ink:#1E2233;
+    --muted:#6B7280;
+    --line:#E3E4E0;
+    --radius:16px;
+    --sans:'Poppins',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    --body:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--page);
+    color:var(--ink);
+    font-family:var(--body);
+    font-size:16px;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- Hero ---------- */
+  .hero{
+    background:var(--navy);
+    color:var(--white);
+    padding:26px 22px 34px;
+    position:relative;
+    overflow:hidden;
+  }
+  .hero-inner{max-width:640px;margin:0 auto;position:relative;z-index:1;}
+  .circ{
+    position:absolute;border:1px solid rgba(255,255,255,.07);border-radius:50%;
+    pointer-events:none;
+  }
+  .c1{width:280px;height:280px;top:-120px;right:-70px;}
+  .c2{width:170px;height:170px;top:30px;right:-90px;border-color:rgba(255,255,255,.05);}
+
+  .logo{display:flex;align-items:center;margin-bottom:22px;}
+  .logo svg{height:32px;width:auto;display:block;}
+
+  .eyebrow{
+    font-family:var(--mono);font-weight:500;font-size:12px;
+    letter-spacing:3px;color:var(--green);margin-bottom:8px;
+  }
+  .hero h1{
+    font-family:var(--sans);font-weight:700;margin:0 0 10px;
+    font-size:clamp(28px,6vw,38px);line-height:1.15;letter-spacing:-.5px;
+  }
+  .hero .sub{
+    margin:0 0 20px;font-size:15px;color:rgba(255,255,255,.75);max-width:480px;
+  }
+  .badge{
+    display:inline-flex;align-items:center;gap:8px;
+    font-family:var(--mono);font-size:13px;color:#E8E9F0;
+    background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.16);
+    border-radius:999px;padding:9px 16px;
+  }
+  .badge .dot{color:var(--green);font-size:11px;}
+
+  /* ---------- Layout ---------- */
+  .wrap{max-width:640px;margin:0 auto;padding:18px 16px 8px;}
+
+  .card{
+    background:var(--white);border-radius:var(--radius);
+    padding:18px 20px;margin-bottom:14px;
+  }
+
+  .step{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+  .num{
+    font-family:var(--mono);font-weight:600;font-size:12px;color:var(--green-dark);
+    border:1.5px solid var(--green);border-radius:7px;padding:2px 7px;line-height:1.4;
+  }
+  .ttl{font-family:var(--sans);font-weight:600;font-size:16.5px;color:var(--navy);}
+  .desc{font-size:13.5px;color:var(--muted);margin:-6px 0 14px;line-height:1.55;}
+
+  input[type=text]{
+    width:100%;font-family:var(--mono);font-weight:500;font-size:17px;color:var(--ink);
+    background:var(--white);border:1px solid var(--line);border-radius:12px;
+    padding:13px 14px;appearance:none;
+  }
+  input:focus{outline:none;border-color:var(--green-dark);box-shadow:0 0 0 3px rgba(18,184,122,.15);}
+  input::placeholder{color:#B9BCC4;font-family:var(--mono);}
+  input.computed{
+    background:var(--green-soft);border-color:var(--green);color:var(--green-dark);font-weight:600;
+  }
+
+  .igroup{display:flex;}
+  .igroup .addon{
+    display:flex;align-items:center;font-family:var(--mono);font-size:15px;color:var(--muted);
+    background:#F4F4F2;border:1px solid var(--line);padding:0 14px;white-space:nowrap;
+  }
+  .igroup .addon.pre{border-right:none;border-radius:12px 0 0 12px;}
+  .igroup .addon.suf{border-left:none;border-radius:0 12px 12px 0;}
+  .igroup input{flex:1;min-width:0;}
+  .igroup input.has-pre{border-radius:0 12px 12px 0;}
+  .igroup input.has-suf{border-radius:12px 0 0 12px;}
+
+  .hidden{display:none !important;}
+
+  /* ---------- Result ---------- */
+  .result{
+    background:var(--navy);color:var(--white);border-radius:18px;
+    padding:24px 22px;margin:20px 0 10px;
+  }
+  .result .cap{
+    font-family:var(--mono);font-weight:500;font-size:13px;
+    letter-spacing:2px;color:var(--green);
+  }
+  .result .big{
+    font-family:var(--mono);font-weight:700;font-size:34px;line-height:1.15;
+    margin:10px 0 4px;font-variant-numeric:tabular-nums;min-height:42px;
+    display:flex;align-items:center;
+  }
+  .result .dash{display:inline-block;width:46px;height:7px;border-radius:4px;background:#DFF6EC;}
+  .rsdash{display:none;}
+  .bigcap{display:none;}
+  .result .divider{border-top:1px solid rgba(255,255,255,.13);margin:16px 0 18px;}
+
+  .rgrid{display:grid;grid-template-columns:1fr 1fr;gap:20px 18px;}
+  .rcell .rlbl{
+    font-family:var(--mono);font-size:11px;letter-spacing:1.2px;
+    color:rgba(255,255,255,.55);margin-bottom:5px;
+  }
+  .rcell .rval{
+    font-family:var(--mono);font-weight:500;font-size:16px;color:var(--white);
+    font-variant-numeric:tabular-nums;word-break:break-word;
+  }
+  .rcell .rval.dim{color:rgba(255,255,255,.65);}
+  .rcell .rval.hl{color:var(--green);font-weight:600;}
+
+  .placeholder-msg{color:rgba(255,255,255,.6);font-size:14px;margin:6px 0 0;}
+
+  .warn{
+    display:flex;gap:10px;align-items:flex-start;
+    background:#FFF7E8;border:1px solid #F3D48A;border-radius:11px;
+    padding:11px 13px;font-size:13.5px;color:#7A5B12;margin-top:14px;
+  }
+  .warn .ic{flex:0 0 auto;font-weight:700;}
+
+  .btnrow{margin-top:16px;}
+  .btn-limpar{
+    font-family:var(--sans);font-weight:600;font-size:13px;
+    background:rgba(255,255,255,.08);color:var(--off-white);
+    border:1px solid rgba(255,255,255,.18);border-radius:10px;
+    padding:8px 16px;cursor:pointer;transition:all .12s ease;
+  }
+  .btn-limpar:hover{border-color:var(--green);color:var(--green);}
+
+  footer{max-width:640px;margin:0 auto;padding:10px 16px 50px;}
+  .note{
+    font-size:12.5px;color:#8A8FA3;line-height:1.65;
+    border-top:1px solid rgba(255,255,255,.1);padding-top:18px;
+  }
+  .note .src{color:var(--green);}
+
+  /* ================= DESKTOP (≥900px) — grade 2 colunas ================= */
+  @media (min-width:900px){
+    .hero-inner, .wrap, footer{max-width:1200px;}
+    .wrap#calc{
+      display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;
+    }
+    .wrap#calc .card{margin-bottom:0;}
+    .wrap#calc .result{grid-column:1 / -1;margin:8px 0 10px;padding:30px 40px;}
+
+    .result .cap{display:block;text-align:center;font-size:15px;letter-spacing:5px;}
+    .result .big{justify-content:center;font-size:44px;color:var(--green);margin:14px 0 4px;}
+    .bigcap{
+      display:block;text-align:center;font-family:var(--mono);font-size:12px;
+      color:rgba(255,255,255,.5);letter-spacing:1px;margin-bottom:6px;
+    }
+    .placeholder-msg{text-align:center;}
+    .btnrow{text-align:center;}
+    .result .divider{margin:20px 0 22px;}
+    .rgrid{gap:26px 80px;}
+    .rcell .rval{font-size:17px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="circ c1"></div>
+  <div class="circ c2"></div>
+  <div class="hero-inner">
+    <div class="logo" aria-label="Kard">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 767.11 205.16" role="img" aria-hidden="true">
+        <path d="M329.43,159.67v-.54c0-30.51,23.16-46.31,57.75-46.31,13.62,0,26.96,2.73,35.41,5.72v-2.45c0-15.25-9.53-23.98-29.42-23.98-15.52,0-27.51,3-40.59,8.17l-6.97-23.94c-2.12-7.29,1.94-14.95,9.17-17.24,13.17-4.16,27.85-6.76,46.83-6.76,26.42,0,44.4,6.27,56.12,17.98,11.17,10.9,15.8,26.16,15.8,46.85v84.72h-37.24c-7.71,0-13.97-6.25-13.97-13.97v-1.28c-10.08,11.17-23.97,18.52-43.31,18.52-28.06,0-49.58-16.07-49.58-45.49M423.14,148.51v-6.81c-5.18-2.18-12.53-3.82-20.16-3.82-14.98,0-23.7,7.36-23.7,18.25v.54c0,10.08,7.62,16.07,18.25,16.07,14.98,0,25.61-9.54,25.61-24.24" fill="#fff"/>
+        <path d="M493.94,55.43h37.59c7.68,0,13.9,6.22,13.9,13.9v15.64c8.4-20.06,21.95-33.06,46.34-31.98v54.2h-4.33c-26.83,0-42.01,15.45-42.01,49.32v45.53h-51.49V55.43Z" fill="#fff"/>
+        <path d="M606.43,129.42v-.54c0-47.61,29.75-76.55,64.38-76.55,22.18,0,35.17,10.01,44.91,21.1V13.87c0-7.66,6.21-13.87,13.87-13.87h37.52v201.92h-37.25c-7.81,0-14.14-6.33-14.14-14.14v-4.59c0-.25-.31-.36-.47-.17-9.94,11.94-22.59,22.16-44.17,22.16-34.62,0-64.65-28.94-64.65-75.74M716.53,128.88v-.54c0-19.21-13.26-33-29.75-33s-30.03,13.52-30.03,33v.54c0,19.48,13.53,33.27,30.03,33.27s29.75-13.8,29.75-33.27" fill="#fff"/>
+        <path d="M282.86,50.34h-18.4s-112.75-.03-112.75-.03h-75.86C33.96,50.31,0,84.27,0,126.16h0c0,41.89,33.96,75.86,75.86,75.86l69.71.03,119.4-146.89h17.89v-4.82Z" fill="#01f767"/>
+        <path d="M227.22,0v101.17l37.48-45.71c2.65-3.26,6.64-5.16,10.84-5.16h51.32l-54.88,66.46,54.34,85.28h-54.34l-30.8-47.69-13.96,17v30.69h-51.75V13.97c0-7.71,6.25-13.97,13.97-13.97h37.78Z" fill="#fff"/>
+      </svg>
+    </div>
+    <div class="eyebrow">CORRESPONDENTE BANCÁRIO</div>
+    <h1>Kalculadora Dívidas</h1>
+    <p class="sub">Financiamento com prestações fixas — preencha três campos e deixe em branco o que você quer calcular.</p>
+    <span class="badge"><span class="dot">◆</span>Sistema de prestações fixas (Tabela Price)</span>
+  </div>
+</header>
+
+<main class="wrap" id="calc">
+
+  <!-- 01 Parcelas pendentes -->
+  <section class="card">
+    <div class="step"><span class="num">01</span><span class="ttl">Parcelas pendentes</span></div>
+    <p class="desc">Quantas prestações ainda faltam pagar.</p>
+    <div class="igroup">
+      <input type="text" inputmode="numeric" class="has-suf" id="parcelas" placeholder="Ex: 48" autocomplete="off">
+      <span class="addon suf">parcelas</span>
+    </div>
+  </section>
+
+  <!-- 02 Taxa de juros -->
+  <section class="card">
+    <div class="step"><span class="num">02</span><span class="ttl">Taxa de juros mensal</span></div>
+    <p class="desc">Taxa de juros cobrada ao mês no contrato.</p>
+    <div class="igroup">
+      <input type="text" inputmode="decimal" class="has-suf" id="taxa" placeholder="Ex: 1,90" autocomplete="off">
+      <span class="addon suf">% a.m.</span>
+    </div>
+  </section>
+
+  <!-- 03 Valor da prestação -->
+  <section class="card">
+    <div class="step"><span class="num">03</span><span class="ttl">Valor da prestação</span></div>
+    <p class="desc">Valor de cada parcela mensal.</p>
+    <div class="igroup">
+      <span class="addon pre">R$</span>
+      <input type="text" inputmode="decimal" class="has-pre" id="prestacao" placeholder="0,00" autocomplete="off">
+    </div>
+  </section>
+
+  <!-- 04 Valor da dívida -->
+  <section class="card">
+    <div class="step"><span class="num">04</span><span class="ttl">Valor da dívida</span></div>
+    <p class="desc">Valor financiado (saldo devedor presente).</p>
+    <div class="igroup">
+      <span class="addon pre">R$</span>
+      <input type="text" inputmode="decimal" class="has-pre" id="divida" placeholder="0,00" autocomplete="off">
+    </div>
+  </section>
+
+  <!-- Resultado -->
+  <section class="result" id="result">
+    <div class="cap">RESULTADO</div>
+    <div class="big" id="valorFinal"><span class="dash"></span><span class="rsdash">—</span></div>
+    <div class="bigcap" id="bigcap">preencha três campos</div>
+    <p class="placeholder-msg" id="msg">Preencha três campos — o que ficar em branco será calculado.</p>
+    <div class="divider"></div>
+    <div class="rgrid">
+      <div class="rcell">
+        <div class="rlbl">PARCELAS PENDENTES</div>
+        <div class="rval dim" id="cellParcelas">—</div>
+      </div>
+      <div class="rcell">
+        <div class="rlbl">TAXA DE JUROS</div>
+        <div class="rval dim" id="cellTaxa">—</div>
+      </div>
+      <div class="rcell">
+        <div class="rlbl">VALOR DA PRESTAÇÃO</div>
+        <div class="rval dim" id="cellPrestacao">—</div>
+      </div>
+      <div class="rcell">
+        <div class="rlbl">VALOR DA DÍVIDA</div>
+        <div class="rval dim" id="cellDivida">—</div>
+      </div>
+      <div class="rcell">
+        <div class="rlbl">TOTAL A PAGAR</div>
+        <div class="rval dim" id="cellTotal">—</div>
+      </div>
+      <div class="rcell">
+        <div class="rlbl">JUROS EMBUTIDOS</div>
+        <div class="rval dim" id="cellJuros">—</div>
+      </div>
+    </div>
+    <div id="warnBox"></div>
+    <div class="btnrow">
+      <button type="button" class="btn-limpar" id="btnLimpar">Limpar campos</button>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <p class="note">
+    <span class="src">Como funciona:</span> cálculo pelo sistema de prestações fixas (Tabela Price), o mesmo da Calculadora do Cidadão do Banco Central. Informe três dos quatro valores — parcelas pendentes, taxa mensal, valor da prestação e valor da dívida — e o campo deixado em branco é calculado automaticamente. Ferramenta de apoio para análise de contratos e compra de dívida; os valores são estimativas e não substituem o extrato oficial do contrato.
+  </p>
+</footer>
+
+<script>
+/* ============================ HELPERS ============================ */
+const $ = id => document.getElementById(id);
+const brl = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+const num2 = new Intl.NumberFormat('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+function parseDec(str){
+  if(!str) return null;
+  const clean = String(str).replace(/[^\d.,]/g,'').replace(/\./g,'').replace(',', '.');
+  const v = parseFloat(clean);
+  return isNaN(v) ? null : v;
+}
+
+/* ============================ MATEMÁTICA (Tabela Price) ============================
+   PV = PMT × (1 − (1+i)^−n) / i
+   Cada função calcula uma variável a partir das outras três.               */
+function calcDivida(n, i, pmt){ return pmt * (1 - Math.pow(1+i, -n)) / i; }
+function calcPrestacao(n, i, pv){ return pv * i / (1 - Math.pow(1+i, -n)); }
+function calcParcelas(i, pmt, pv){
+  const x = 1 - pv * i / pmt;
+  if(x <= 0) return null; // prestação não cobre nem os juros
+  return -Math.log(x) / Math.log(1+i);
+}
+function calcTaxa(n, pmt, pv){
+  if(pmt * n <= pv) return null; // sem juros positivos
+  let lo = 1e-9, hi = 10; // 0% a 1000% a.m.
+  for(let k=0; k<200; k++){
+    const mid = (lo+hi)/2;
+    if(calcDivida(n, mid, pmt) > pv) lo = mid; else hi = mid;
+  }
+  return (lo+hi)/2;
+}
+
+/* ============================ UI ============================ */
+const campos = ['parcelas','taxa','prestacao','divida'];
+let computedField = null; // campo preenchido pela calculadora (auto-limpa ao editar os demais)
+const LABELS = {
+  parcelas:'Parcelas pendentes (calculado)',
+  taxa:'Taxa de juros mensal (calculada)',
+  prestacao:'Valor da prestação (calculado)',
+  divida:'Valor da dívida (calculado)'
+};
+
+function lerCampos(){
+  return {
+    parcelas: parseDec($('parcelas').value),
+    taxa: parseDec($('taxa').value),
+    prestacao: parseDec($('prestacao').value),
+    divida: parseDec($('divida').value)
+  };
+}
+
+function compute(){
+  const v = lerCampos();
+  const vazios = campos.filter(c=>v[c]==null);
+  const big = $('valorFinal'), bigcap = $('bigcap'), msg = $('msg'), warnBox = $('warnBox');
+
+  campos.forEach(c=>$(c).classList.remove('computed'));
+  warnBox.innerHTML = '';
+
+  const setCell = (id, val, hl)=>{
+    const el = $(id);
+    el.textContent = val==null ? '—' : val;
+    el.className = 'rval' + (val==null ? ' dim' : (hl ? ' hl' : ''));
+  };
+
+  // validações básicas
+  const warns = [];
+  if(v.parcelas!=null && (v.parcelas<1 || !Number.isFinite(v.parcelas))) warns.push('Parcelas pendentes deve ser 1 ou mais.');
+  if(v.taxa!=null && v.taxa<=0) warns.push('Taxa de juros deve ser maior que zero.');
+  if(v.prestacao!=null && v.prestacao<=0) warns.push('Valor da prestação deve ser maior que zero.');
+  if(v.divida!=null && v.divida<=0) warns.push('Valor da dívida deve ser maior que zero.');
+
+  const showEmpty = (texto)=>{
+    big.innerHTML = '<span class="dash"></span><span class="rsdash">—</span>';
+    bigcap.textContent = 'preencha três campos';
+    msg.textContent = texto;
+    msg.classList.remove('hidden');
+    setCell('cellParcelas', v.parcelas!=null ? `${num2.format(v.parcelas)}` : null);
+    setCell('cellTaxa', v.taxa!=null ? `${num2.format(v.taxa)}% a.m.` : null);
+    setCell('cellPrestacao', v.prestacao!=null ? brl.format(v.prestacao) : null);
+    setCell('cellDivida', v.divida!=null ? brl.format(v.divida) : null);
+    setCell('cellTotal', null); setCell('cellJuros', null);
+    warns.forEach(w=>{ warnBox.innerHTML += `<div class="warn"><span class="ic">!</span><span>${w}</span></div>`; });
+  };
+
+  if(vazios.length >= 2){ showEmpty('Preencha três campos — o que ficar em branco será calculado.'); return; }
+  if(vazios.length === 0){ showEmpty('Todos os campos estão preenchidos — apague o que você quer calcular.'); return; }
+  if(warns.length){ showEmpty(warns[0]); return; }
+
+  const alvo = vazios[0];
+  const i = v.taxa!=null ? v.taxa/100 : null;
+  let out = null;
+
+  if(alvo==='divida')      out = calcDivida(v.parcelas, i, v.prestacao);
+  else if(alvo==='prestacao') out = calcPrestacao(v.parcelas, i, v.divida);
+  else if(alvo==='parcelas')  out = calcParcelas(i, v.prestacao, v.divida);
+  else if(alvo==='taxa')      out = calcTaxa(v.parcelas, v.prestacao, v.divida);
+
+  if(out==null || !Number.isFinite(out) || out<=0){
+    showEmpty('');
+    const motivo = alvo==='parcelas'
+      ? `A prestação de ${brl.format(v.prestacao)} não cobre os juros mensais da dívida — o saldo nunca seria quitado.`
+      : alvo==='taxa'
+        ? 'O total das prestações é menor ou igual à dívida — não há taxa de juros positiva possível.'
+        : 'Não foi possível calcular com esses valores — confira os dados.';
+    warnBox.innerHTML = `<div class="warn"><span class="ic">!</span><span>${motivo}</span></div>`;
+    return;
+  }
+
+  // completa o conjunto com o valor calculado
+  const f = {...v};
+  f[alvo] = alvo==='taxa' ? out*100 : out;
+
+  // valor em destaque
+  let bigTxt;
+  if(alvo==='parcelas'){
+    const inteiro = Math.ceil(out - 1e-9);
+    bigTxt = Number.isInteger(+out.toFixed(4)) ? `${Math.round(out)} parcelas` : `≈ ${inteiro} parcelas`;
+  }
+  else if(alvo==='taxa') bigTxt = `${num2.format(out*100)}% a.m.`;
+  else bigTxt = brl.format(out);
+
+  big.textContent = bigTxt;
+  bigcap.textContent = LABELS[alvo];
+  msg.classList.add('hidden');
+  $(alvo).classList.add('computed');
+  $(alvo).value = alvo==='parcelas'
+    ? num2.format(f.parcelas)
+    : num2.format(f[alvo]);
+  computedField = alvo;
+
+  const totalPagar = f.prestacao * f.parcelas;
+  setCell('cellParcelas', num2.format(f.parcelas), alvo==='parcelas');
+  setCell('cellTaxa', `${num2.format(f.taxa)}% a.m.`, alvo==='taxa');
+  setCell('cellPrestacao', brl.format(f.prestacao), alvo==='prestacao');
+  setCell('cellDivida', brl.format(f.divida), alvo==='divida');
+  setCell('cellTotal', brl.format(totalPagar));
+  setCell('cellJuros', brl.format(totalPagar - f.divida));
+
+  if(alvo==='parcelas' && Math.abs(out - Math.round(out)) > 1e-4){
+    warnBox.innerHTML = `<div class="warn"><span class="ic">!</span><span>Resultado exato: ${num2.format(out)} parcelas — a última prestação seria parcial.</span></div>`;
+  }
+}
+
+/* ============================ EVENTOS ============================ */
+campos.forEach(c=>{
+  const el = $(c);
+  el.addEventListener('input', ()=>{
+    // valor calculado é sempre derivado: limpa ao editar qualquer outro campo
+    if(computedField && computedField!==c){
+      $(computedField).value='';
+      $(computedField).classList.remove('computed');
+    }
+    computedField = null;
+    el.classList.remove('computed');
+    if(c==='parcelas'){
+      el.value = el.value.replace(/[^\d]/g,'').slice(0,4);
+    }
+    compute();
+  });
+  el.addEventListener('blur', ()=>{
+    if(el.classList.contains('computed')) return;
+    const val = parseDec(el.value);
+    if(val==null){ el.value=''; return; }
+    el.value = c==='parcelas' ? String(Math.round(val)) : num2.format(val);
+    compute();
+  });
+});
+
+$('btnLimpar').addEventListener('click', ()=>{
+  campos.forEach(c=>{ $(c).value=''; $(c).classList.remove('computed'); });
+  computedField = null;
+  compute();
+});
+
+compute();
+</script>
+</body>
+</html>
