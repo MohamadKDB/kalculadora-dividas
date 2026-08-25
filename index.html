@@ -88,6 +88,7 @@
     border:1.5px solid var(--green);border-radius:7px;padding:2px 7px;line-height:1.4;
   }
   .ttl{font-family:var(--sans);font-weight:600;font-size:16.5px;color:var(--navy);}
+  .ttl em{font-style:normal;font-weight:500;color:var(--muted);}
   .desc{font-size:13.5px;color:var(--muted);margin:-6px 0 14px;line-height:1.55;}
 
   input[type=text]{
@@ -178,6 +179,8 @@
     }
     .wrap#calc .card{margin-bottom:0;}
     .wrap#calc .result{grid-column:1 / -1;margin:8px 0 10px;padding:30px 40px;}
+    #cardSaldo{grid-column:1 / -1;}
+    #cardSaldo .igroup{max-width:420px;}
 
     .result .cap{display:block;text-align:center;font-size:15px;letter-spacing:5px;}
     .result .big{justify-content:center;font-size:44px;color:var(--green);margin:14px 0 4px;}
@@ -257,6 +260,16 @@
     </div>
   </section>
 
+  <!-- 05 Saldo devedor -->
+  <section class="card" id="cardSaldo">
+    <div class="step"><span class="num">05</span><span class="ttl">Saldo devedor <em>(opcional)</em></span></div>
+    <p class="desc">Valor de quitação informado pelo banco atual — usado para calcular o saldo líquido da operação.</p>
+    <div class="igroup">
+      <span class="addon pre">R$</span>
+      <input type="text" inputmode="decimal" class="has-pre" id="saldoDevedor" placeholder="0,00" autocomplete="off">
+    </div>
+  </section>
+
   <!-- Resultado -->
   <section class="result" id="result">
     <div class="cap">RESULTADO</div>
@@ -288,6 +301,14 @@
       <div class="rcell">
         <div class="rlbl">JUROS EMBUTIDOS</div>
         <div class="rval dim" id="cellJuros">—</div>
+      </div>
+      <div class="rcell">
+        <div class="rlbl">SALDO DEVEDOR</div>
+        <div class="rval dim" id="cellSaldoDev">—</div>
+      </div>
+      <div class="rcell">
+        <div class="rlbl">SALDO LÍQUIDO</div>
+        <div class="rval dim" id="cellLiquido">—</div>
       </div>
     </div>
     <div id="warnBox"></div>
@@ -358,6 +379,7 @@ function lerCampos(){
 
 function compute(){
   const v = lerCampos();
+  if(computedField) v[computedField] = null; // valor derivado: sempre recalculado
   const vazios = campos.filter(c=>v[c]==null);
   const big = $('valorFinal'), bigcap = $('bigcap'), msg = $('msg'), warnBox = $('warnBox');
 
@@ -387,6 +409,9 @@ function compute(){
     setCell('cellPrestacao', v.prestacao!=null ? brl.format(v.prestacao) : null);
     setCell('cellDivida', v.divida!=null ? brl.format(v.divida) : null);
     setCell('cellTotal', null); setCell('cellJuros', null);
+    const sdv = parseDec($('saldoDevedor').value);
+    setCell('cellSaldoDev', sdv!=null ? brl.format(sdv) : null);
+    setCell('cellLiquido', null);
     warns.forEach(w=>{ warnBox.innerHTML += `<div class="warn"><span class="ic">!</span><span>${w}</span></div>`; });
   };
 
@@ -444,8 +469,21 @@ function compute(){
   setCell('cellTotal', brl.format(totalPagar));
   setCell('cellJuros', brl.format(totalPagar - f.divida));
 
+  // saldo líquido = valor da dívida − saldo devedor (quitação no banco atual)
+  const sd = parseDec($('saldoDevedor').value);
+  setCell('cellSaldoDev', sd!=null ? brl.format(sd) : null);
+  if(sd!=null){
+    const liquido = f.divida - sd;
+    setCell('cellLiquido', brl.format(liquido), true);
+    if(liquido < 0){
+      warnBox.innerHTML += `<div class="warn"><span class="ic">!</span><span>Saldo devedor (${brl.format(sd)}) maior que o valor da dívida (${brl.format(f.divida)}) — saldo líquido negativo.</span></div>`;
+    }
+  } else {
+    setCell('cellLiquido', null);
+  }
+
   if(alvo==='parcelas' && Math.abs(out - Math.round(out)) > 1e-4){
-    warnBox.innerHTML = `<div class="warn"><span class="ic">!</span><span>Resultado exato: ${num2.format(out)} parcelas — a última prestação seria parcial.</span></div>`;
+    warnBox.innerHTML += `<div class="warn"><span class="ic">!</span><span>Resultado exato: ${num2.format(out)} parcelas — a última prestação seria parcial.</span></div>`;
   }
 }
 
@@ -474,8 +512,16 @@ campos.forEach(c=>{
   });
 });
 
+/* saldo devedor: não participa do cálculo Price, só deriva o saldo líquido */
+$('saldoDevedor').addEventListener('input', compute);
+$('saldoDevedor').addEventListener('blur', e=>{
+  const val = parseDec(e.target.value);
+  e.target.value = val==null ? '' : num2.format(val);
+});
+
 $('btnLimpar').addEventListener('click', ()=>{
   campos.forEach(c=>{ $(c).value=''; $(c).classList.remove('computed'); });
+  $('saldoDevedor').value='';
   computedField = null;
   compute();
 });
